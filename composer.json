@@ -17,10 +17,18 @@
     ],
     "require": {
         "php": "^8.0",
+        "graham-campbell/github": "^11.0",
+        "guzzlehttp/guzzle": "^7.4",
+        "illuminate/database": "^9.0",
+        "illuminate/http": "^9.0",
+        "knplabs/packagist-api": "^2.0",
         "laravel-zero/framework": "^9.2",
+        "laravel-zero/phar-updater": "^1.2",
+        "league/commonmark": "^2.3",
         "nunomaduro/termwind": "^1.14"
     },
     "require-dev": {
+        "fakerphp/faker": "^1.9.1",
         "laravel/pint": "^1.2",
         "mockery/mockery": "^1.4.4",
         "pestphp/pest": "^1.21.3"
@@ -47,5 +55,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "bin": ["rel"]
+    "bin": ["release-notes"]
 }
