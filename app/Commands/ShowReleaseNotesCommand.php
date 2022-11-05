@@ -11,25 +11,90 @@ use Composer\Semver\VersionParser;
 use Github\ResultPager;
 use GrahamCampbell\GitHub\GitHubManager;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Artisan;
 use LaravelZero\Framework\Commands\Command;
 use League\CommonMark\CommonMarkConverter;
+use Symfony\Component\Console\Output\BufferedOutput;
 use function Termwind\render;
+use function Termwind\renderUsing;
 
-class FindCommand extends Command
+class ShowReleaseNotesCommand extends Command
 {
-    protected $signature = 'find {repository : Repository or package name}
-                                 {--tag=     : Specific tag}
-                                 {--from=    : From tag}
-                                 {--to=      : To tag}';
+    protected $signature = 'release-notes {name?   : Name of the repository or package}
+                                          {--tag=  : Specific tag}
+                                          {--from= : From version}
+                                          {--to=   : To version}';
 
-    protected $description = 'Command description';
+    protected $description = 'Shows release notes for a Github repository or Composer package.';
 
-    public function handle(GitHubManager $github, RepoResolver $resolver): int
+    protected $help = <<<'HTML'
+<div>
+   <div>
+      <span class="text-green">name</span> can be any of the following:
+   </div>
+   <ul class="ml-2">
+      <li>Name of a Github Repository, e.g.
+         <span class="text-brightblue">username/repository</span>
+      </li>
+      <li>Full Github URL, e.g.
+         <span class="text-brightblue">https://github.com/username/repository</span>
+      </li>
+      <li>Name of a Composer package, e.g.
+         <span class="text-brightblue">vendor/package</span>
+      </li>
+   </ul>
+   <div class="mt-1">
+      If
+      <span class="text-green">--tag</span> is provided, it must match the tag name of the release exactly
+   </div>
+   <div class="mt-1">
+      <span class="text-green">--from</span> and
+      <span class="text-green">--to</span> are interpreted loosely as semver version numbers ("v" prefix is ignored), e.g.
+      <ul class="ml-2">
+         <li class="text-brightblue">3</li>
+         <li class="text-brightblue">v1.2</li>
+         <li class="text-brightblue">3.0-beta</li>
+         </li>
+      </ul>
+   </div>
+   <div class="mt-1">
+      If neither
+      <span class="text-green">--tag</span>,
+      <span class="text-green">--from</span> or
+      <span class="text-green">--to</span> is provided, only the
+      <span class="italic">latest</span> release will be displayed
+   </div>
+   <div class="mt-1">
+      Tip: Pipe the output to a pager while preserving colors and formatting, e.g.
+      <div>
+         <code>release-notes organization/repository --from 2.1 --to 4.0 | less -r</code>
+      </div>
+   </div>
+</div>
+HTML;
+
+    protected function configure()
     {
+        parent::configure();
+        $buffer = new BufferedOutput(decorated: true);
+        renderUsing($buffer);
+        render($this->help);
+        renderUsing($this->output);
+        $this->help = $buffer->fetch();
+    }
+
+    public function handle(GitHubManager $github, RepoResolver $resolver, VersionParser $versionParser): int
+    {
+        if (! $this->argument('name')) {
+            Artisan::call(self::class, ['--help' => true], outputBuffer: $this->getOutput());
+            $this->info('Other commands:');
+            Artisan::call('list', outputBuffer: $this->getOutput());
+
+            return self::SUCCESS;
+        }
         try {
             $api = $github->repository()->releases();
-            $versionParser = new VersionParser();
-            $repo = $resolver->find($this->argument('repository'));
+            $repo = $resolver->find($this->argument('name'));
             $tag = $this->option('tag');
             if ($tag) {
                 try {
@@ -56,7 +121,9 @@ class FindCommand extends Command
                     return self::FAILURE;
                 }
             }
-            $from = $versionParser->normalize($from);
+            if ($from) {
+                $from = $versionParser->normalize($from);
+            }
             if ($to) {
                 $to = $versionParser->normalize($to);
             }
@@ -68,7 +135,7 @@ class FindCommand extends Command
                     if (! $version) {
                         return false;
                     }
-                    if (version_compare($version, $from, '<')) {
+                    if ($from && version_compare($version, $from, '<')) {
                         return false;
                     }
                     if ($to && version_compare($version, $to, '>')) {
@@ -113,28 +180,17 @@ class FindCommand extends Command
             $link = "<a href='{$release['url']}'>Show on Github</a>";
             $tag = $release['tag_name'];
             $header = <<<HTML
-<div class='w-full flex justify-between bg-white text-black px-1'>
-<span class="font-bold">$tag</span><span>$link</span><span class="italic">$created</span>
-</div>
-HTML;
+                <div class='w-full flex justify-between bg-white text-black px-1'>
+                  <span class="font-bold">$tag</span>
+                  <span>$link</span>
+                  <span class="italic">$created</span>
+                </div>
+                HTML;
 
             render($header);
             $markdown = $release['body'] ?: 'No release notes';
             $html = $converter->convert($markdown);
             render("<div class='mb-1 mx-1'>$html</div>");
-        }
-    }
-
-    private function colorTest()
-    {
-        $colors = ['slate', 'gray', 'zinc', 'neutral', 'stone', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose'];
-        $weights = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
-        foreach ($colors as $color) {
-            foreach ($weights as $weight) {
-                $class = "bg-$color-$weight";
-                $text = $weight < 500 ? 'text-black' : 'text-white';
-                render("<div class='$class $text w-full text-center'>$class</div>");
-            }
         }
     }
 }

@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => \App\Commands\FindCommand::class,
+    'default' => \App\Commands\ShowReleaseNotesCommand::class,
 
     /*
     |--------------------------------------------------------------------------

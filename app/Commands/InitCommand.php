@@ -30,7 +30,6 @@ class InitCommand extends Command
     {
         $dbPath = config('database.connections.sqlite.database');
         if (! file_exists($dbPath)) {
-
             if ($this->confirm("Create cache at $dbPath")) {
                 if (touch($dbPath)) {
                     Artisan::call('migrate', ['--force' => true]);
