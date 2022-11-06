@@ -68,12 +68,5 @@ return [
 
     'providers' => [
         App\Providers\AppServiceProvider::class,
-        GrahamCampbell\GitHub\GitHubServiceProvider::class,
-    ],
-
-    'aliases' => [
-        'Http' => \Illuminate\Support\Facades\Http::class,
-        'Github' => \GrahamCampbell\GitHub\Facades\GitHub::class,
-        'Cache' => \Illuminate\Support\Facades\Cache::class,
     ],
 ];

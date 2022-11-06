@@ -2,15 +2,10 @@
 
 namespace App\Commands;
 
-use App\GithubRepository;
-use App\RepoResolver;
-use App\RepositoryNotFoundException;
-use Cache;
-use Carbon\Carbon;
+use App\Release;
+use App\Repository;
+use App\Services\Github;
 use Composer\Semver\VersionParser;
-use Github\ResultPager;
-use GrahamCampbell\GitHub\GitHubManager;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use LaravelZero\Framework\Commands\Command;
 use League\CommonMark\CommonMarkConverter;
@@ -61,13 +56,12 @@ class ShowReleaseNotesCommand extends Command
       If neither
       <span class="text-green">--tag</span>,
       <span class="text-green">--from</span> or
-      <span class="text-green">--to</span> is provided, only the
-      <span class="italic">latest</span> release will be displayed
+      <span class="text-green">--to</span> is provided, only the latest release will be displayed
    </div>
    <div class="mt-1">
       Tip: Pipe the output to a pager while preserving colors and formatting, e.g.
       <div>
-         <code>release-notes organization/repository --from 2.1 --to 4.0 | less -r</code>
+         <code>release-notes organization/repository --from 2.1 --to 4.0 --ansi | less -r</code>
       </div>
    </div>
 </div>
@@ -83,7 +77,7 @@ HTML;
         $this->help = $buffer->fetch();
     }
 
-    public function handle(GitHubManager $github, RepoResolver $resolver, VersionParser $versionParser): int
+    public function handle(Github $github, VersionParser $versionParser): int
     {
         if (! $this->argument('name')) {
             Artisan::call(self::class, ['--help' => true], outputBuffer: $this->getOutput());
@@ -92,104 +86,87 @@ HTML;
 
             return self::SUCCESS;
         }
-        try {
-            $api = $github->repository()->releases();
-            $repo = $resolver->find($this->argument('name'));
-            $tag = $this->option('tag');
-            if ($tag) {
-                try {
-                    $this->renderReleases([$api->tag($repo->username, $repo->repository, $tag)]);
-
-                    return self::SUCCESS;
-                } catch (\Throwable) {
-                    $this->error("No release found for tag: $tag");
-
-                    return self::FAILURE;
-                }
-            }
-            $from = $this->option('from');
-            $to = $this->option('to');
-            if (! $from && ! $to) {
-                // Default to just show the latest release
-                try {
-                    $this->renderReleases([$api->latest($repo->username, $repo->repository)]);
-
-                    return self::SUCCESS;
-                } catch (\Throwable) {
-                    $this->error('No releases found');
-
-                    return self::FAILURE;
-                }
-            }
-            if ($from) {
-                $from = $versionParser->normalize($from);
-            }
-            if ($to) {
-                $to = $versionParser->normalize($to);
-            }
-            $allReleases = Cache::remember("all-releases-$repo->fullName", now()->addHour(), fn () => $this->fetchAllReleases($repo, $github));
-            $releases = collect($allReleases)
-                ->mapWithKeys(fn ($release) => [$versionParser->normalize(Arr::get($release, 'tag_name') ?: '') => $release])
-                ->sortKeys()
-                ->filter(function ($release, $version) use ($from, $to) {
-                    if (! $version) {
-                        return false;
-                    }
-                    if ($from && version_compare($version, $from, '<')) {
-                        return false;
-                    }
-                    if ($to && version_compare($version, $to, '>')) {
-                        return false;
-                    }
-
-                    return true;
-                });
-            if ($releases->isEmpty()) {
-                $this->error('No releases found');
-            }
-            $this->renderReleases($releases->toArray());
-
-            return self::SUCCESS;
-        } catch (RepositoryNotFoundException $e) {
-            $this->error($e->getMessage());
+        $name = $this->argument('name');
+        $repository = Repository::resolve($name);
+        if (! $repository) {
+            $this->error("Unable to resolve $name");
 
             return self::FAILURE;
         }
-    }
+        if ($tag = $this->option('tag')) {
+            $release = $github->getReleaseForTag($repository, $tag);
+            if (! $release) {
+                $this->error("Unable to find a release from tag $tag in $repository->fullName");
 
-    private function fetchAllReleases(GithubRepository $repo, GitHubManager $github): array
-    {
-        try {
-            return (new ResultPager($github->connection()))->fetchAll($github->repository()->releases(), 'all', [
-                $repo->username,
-                $repo->repository,
-            ]);
-        } catch (\Throwable) {
-            return [];
+                return self::FAILURE;
+            }
+            $this->renderReleases([$release]);
+
+            return self::SUCCESS;
         }
+        $from = $this->option('from');
+        $to = $this->option('to');
+        if (! $from && ! $to) {
+            $latest = $github->getLatestRelease($repository);
+            if (! $latest) {
+                $this->error("Unable to find a latest release in $repository->fullName");
+
+                return self::FAILURE;
+            }
+            $this->renderReleases([$latest]);
+
+            return self::SUCCESS;
+        }
+        if ($from) {
+            $from = $versionParser->normalize($from);
+        }
+        if ($to) {
+            $to = $versionParser->normalize($to);
+        }
+        $releases = array_filter($github->getAllReleases($repository), function (Release $release) use ($from, $to) {
+            if (! $release->normalizedVersion) {
+                return false;
+            }
+            if ($from && version_compare($release->normalizedVersion, $from, '<')) {
+                return false;
+            }
+            if ($to && version_compare($release->normalizedVersion, $to, '>')) {
+                return false;
+            }
+
+            return true;
+        });
+        if (empty($releases)) {
+            $this->warn('No matching releases found');
+
+            return self::SUCCESS;
+        }
+        $this->renderReleases($releases);
+
+        return self::SUCCESS;
     }
 
-    private function renderReleases(array $releases)
+    /**
+     * @param  Release[]  $releases
+     * @return void
+     */
+    private function renderReleases(array $releases): void
     {
         $converter = new CommonMarkConverter([
             'html_input' => 'strip',
             'allow_unsafe_links' => false,
         ]);
         foreach ($releases as $release) {
-            $created = Carbon::parse($release['published_at'])->diffForHumans();
-            $link = "<a href='{$release['url']}'>Show on Github</a>";
-            $tag = $release['tag_name'];
             $header = <<<HTML
                 <div class='w-full flex justify-between bg-white text-black px-1'>
-                  <span class="font-bold">$tag</span>
-                  <span>$link</span>
-                  <span class="italic">$created</span>
+                  <span class="font-bold">$release->tag</span>
+                  <a href="$release->url">Show on Github</a>
+                  <span>Published {$release->publishedOn->diffForHumans()}</span>
                 </div>
                 HTML;
 
             render($header);
-            $markdown = $release['body'] ?: 'No release notes';
-            $html = $converter->convert($markdown);
+            $html = $converter->convert($release->notes);
             render("<div class='mb-1 mx-1'>$html</div>");
         }
     }
