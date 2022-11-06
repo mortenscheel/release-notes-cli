@@ -23,7 +23,6 @@
         "knplabs/github-api": "^3.9",
         "knplabs/packagist-api": "^2.0",
         "laravel-zero/framework": "^9.2",
-        "laravel-zero/phar-updater": "^1.2",
         "league/commonmark": "^2.3",
         "nunomaduro/termwind": "^1.14"
     },

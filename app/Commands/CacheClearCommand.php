@@ -7,19 +7,9 @@ use LaravelZero\Framework\Commands\Command;
 
 class CacheClearCommand extends Command
 {
-    /**
-     * The signature of the command.
-     *
-     * @var string
-     */
     protected $signature = 'cache:clear';
 
-    /**
-     * The description of the command.
-     *
-     * @var string
-     */
-    protected $description = 'Clear the application cache';
+    protected $description = 'Clear the local cache';
 
     public function handle(): int
     {

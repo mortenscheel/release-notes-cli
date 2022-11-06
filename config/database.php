@@ -36,7 +36,7 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DATABASE_URL'),
-            'database' => env('RELEASES_DB_PATH', env('HOME').'/.releases.sqlite'),
+            'database' => (new \App\LocalConfig)->getDatabasePath(),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],

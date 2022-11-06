@@ -1,9 +1,7 @@
 <?php
 
-$default = file_exists(env('RELEASES_DB_PATH', env('HOME').'/.releases.sqlite')) ? 'database' : 'array';
-
 return [
-    'default' => $default,
+    'default' => (new \App\LocalConfig)->databaseExists() ? 'database' : 'array',
 
     'stores' => [
         'database' => [
