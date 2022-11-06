@@ -1,21 +1,26 @@
 {
-    "name": "laravel-zero/laravel-zero",
-    "description": "The Laravel Zero Framework.",
-    "keywords": ["framework", "laravel", "laravel zero", "console", "cli"],
-    "homepage": "https://laravel-zero.com",
+    "name": "mortenscheel/release-notes-cli",
+    "description": "Show formatted Github release notes in the terminal.",
+    "keywords": ["release notes", "packagist", "laravel zero", "console", "cli"],
+    "homepage": "https://github.com/mortenscheel/release-notes-cli",
     "type": "project",
     "license": "MIT",
     "support": {
-        "issues": "https://github.com/laravel-zero/laravel-zero/issues",
-        "source": "https://github.com/laravel-zero/laravel-zero"
+        "issues": "https://github.com/mortenscheel/release-notes-cli/issues",
+        "source": "https://github.com/mortenscheel/release-notes-cli"
     },
     "authors": [
         {
-            "name": "Nuno Maduro",
-            "email": "enunomaduro@gmail.com"
+            "name": "Morten Scheel",
+            "email": "morten@mortenscheel.com"
         }
     ],
-    "require": {
+    "require-dev": {
+        "roave/security-advisories": "dev-latest",
+        "fakerphp/faker": "^1.9.1",
+        "laravel/pint": "^1.2",
+        "mockery/mockery": "^1.4.4",
+        "pestphp/pest": "^1.21.3",
         "php": "^8.0",
         "guzzlehttp/guzzle": "^7.5",
         "http-interop/http-factory-guzzle": "^1.2",
@@ -25,13 +30,6 @@
         "laravel-zero/framework": "^9.2",
         "league/commonmark": "^2.3",
         "nunomaduro/termwind": "^1.14"
-    },
-    "require-dev": {
-        "roave/security-advisories": "dev-latest",
-        "fakerphp/faker": "^1.9.1",
-        "laravel/pint": "^1.2",
-        "mockery/mockery": "^1.4.4",
-        "pestphp/pest": "^1.21.3"
     },
     "autoload": {
         "psr-4": {
@@ -56,5 +54,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "bin": ["release-notes"]
+    "bin": ["builds/release-notes"]
 }
