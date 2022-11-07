@@ -23,7 +23,7 @@ class Release
     {
         return new self(
             Arr::get($data, 'tag_name'),
-            Arr::get($data, 'url'),
+            Arr::get($data, 'html_url'),
             Carbon::parse(Arr::get($data, 'published_at')),
             Arr::get($data, 'body') ?: 'No release notes'
         );
