@@ -159,7 +159,7 @@ HTML;
         foreach ($releases as $release) {
             $header = <<<HTML
                 <div class='w-full flex justify-between bg-white text-black px-1'>
-                  <span class="font-bold">$release->tag</span>
+                  <span>$release->tag</span>
                   <a href="$release->url">Show on Github</a>
                   <span>Published {$release->publishedOn->diffForHumans()}</span>
                 </div>
