@@ -28,6 +28,6 @@ class LocalConfig
 
     private function getConfigPath(string $relative = ''): string
     {
-        return rtrim($_SERVER['HOME'].DIRECTORY_SEPARATOR.'.release-notes'.DIRECTORY_SEPARATOR.$relative, DIRECTORY_SEPARATOR);
+        return rtrim($_SERVER['HOME'].DIRECTORY_SEPARATOR.'.release-notes'.DIRECTORY_SEPARATOR.ltrim($relative, DIRECTORY_SEPARATOR), DIRECTORY_SEPARATOR);
     }
 }
