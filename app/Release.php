@@ -8,7 +8,7 @@ use Illuminate\Support\Arr;
 
 class Release
 {
-    public string $normalizedVersion;
+    public ?string $normalizedVersion;
 
     public function __construct(
         public string $tag,
@@ -16,7 +16,11 @@ class Release
         public Carbon $publishedOn,
         public string $notes
     ) {
-        $this->normalizedVersion = (new VersionParser)->normalize($this->tag);
+        try {
+            $this->normalizedVersion = (new VersionParser)->normalize($this->tag);
+        } catch (\Throwable) {
+            $this->normalizedVersion = null;
+        }
     }
 
     public static function fromApi(mixed $data): self
