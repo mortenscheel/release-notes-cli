@@ -14,7 +14,7 @@ class Release
         public string $tag,
         public string $url,
         public Carbon $publishedOn,
-        public string $notes
+        public ?string $notes
     ) {
         try {
             $this->normalizedVersion = (new VersionParser)->normalize($this->tag);
@@ -29,7 +29,7 @@ class Release
             Arr::get($data, 'tag_name'),
             Arr::get($data, 'html_url'),
             Carbon::parse(Arr::get($data, 'published_at')),
-            Arr::get($data, 'body') ?: 'No release notes'
+            Arr::get($data, 'body')
         );
     }
 }

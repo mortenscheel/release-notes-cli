@@ -124,7 +124,7 @@ HTML;
             $to = $versionParser->normalize($to);
         }
         $releases = array_filter($github->getAllReleases($repository), function (Release $release) use ($from, $to) {
-            if (! $release->normalizedVersion) {
+            if (! $release->normalizedVersion || ! $release->notes) {
                 return false;
             }
             if ($from && version_compare($release->normalizedVersion, $from, '<')) {
@@ -137,7 +137,7 @@ HTML;
             return true;
         });
         if (empty($releases)) {
-            $this->warn('No matching releases found');
+            $this->warn('No matching release notes found');
 
             return self::SUCCESS;
         }
@@ -166,7 +166,7 @@ HTML;
                 HTML;
 
             render($header);
-            $html = $converter->convert($release->notes);
+            $html = $converter->convert($release->notes ?: 'No release notes');
             render("<div class='mb-1 mx-1'>$html</div>");
         }
     }
