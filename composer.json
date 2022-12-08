@@ -54,5 +54,8 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "bin": ["builds/release-notes"]
+    "bin": ["builds/release-notes"],
+    "require": {
+        "laravel-zero/phar-updater": "^1.2"
+    }
 }

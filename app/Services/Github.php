@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Release;
 use App\Repository;
+use Github\AuthMethod;
 use Github\Client;
 use Github\ResultPager;
 use Illuminate\Support\Facades\Cache;
@@ -24,11 +25,16 @@ class Github
         'all-releases' => self::MINUTE * 30,
     ];
 
+    private Client $client;
+
     public function __construct(?string $token)
     {
         $this->client = new Client();
         if ($token) {
-            $this->client->authenticate($token);
+            $this->client->authenticate(
+                tokenOrLogin: $token,
+                authMethod: AuthMethod::ACCESS_TOKEN
+            );
         }
     }
 
@@ -43,7 +49,7 @@ class Github
 
                     return true;
                 } catch (Throwable) {
-                    return false;
+                    return null;
                 }
             }
         );
