@@ -1,8 +1,22 @@
+# Release notes CLI
+A command-line tool to find and show the release notes for a specific Github repository or Composer package.
+
 ## Installation
-Requirements: Linux or Mac with PHP 8.0 and Composer installed.
+#### Composer
+Requirements: Linux or Mac with PHP 8.1 and Composer installed.
 ```shell
 composer global require mortenscheel/release-notes-cli
 ```
+#### Docker
+```shell
+docker run --rm -it mono2990/release-notes {repo}
+```
+You can optionally pass your Github token using an environment variable:
+```shell
+docker run --rm -it -e RELEASE_NOTES_GITHUB_TOKEN={token} mono2990/release-notes {repo}
+```
+Caching is not supported when running in docker
+
 ## Usage
 ```
 release-notes <name> [options]
@@ -42,13 +56,3 @@ The cache can be flushed manually by running
 ```shell
 release-notes cache:clear
 ```
-
-## Docker
-```shell
-docker run --rm -it mono2990/release-notes {repo}
-```
-You can optionally pass your Github token using an environment variable:
-```shell
-docker run --rm -it -e RELEASE_NOTES_GITHUB_TOKEN={token} mono2990/release-notes {repo}
-```
-Caching is not supported when running in docker
