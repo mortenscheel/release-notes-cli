@@ -42,3 +42,13 @@ The cache can be flushed manually by running
 ```shell
 release-notes cache:clear
 ```
+
+## Docker
+```shell
+docker run --rm -it mono2990/release-notes {repo}
+```
+You can optionally pass your Github token using an environment variable:
+```shell
+docker run --rm -it -e RELEASE_NOTES_GITHUB_TOKEN={token} mono2990/release-notes {repo}
+```
+Caching is not supported when running in docker
