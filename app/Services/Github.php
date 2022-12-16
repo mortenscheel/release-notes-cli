@@ -52,7 +52,7 @@ class Github
                     return null;
                 }
             }
-        );
+        ) ?? false;
     }
 
     public function getLatestRelease(Repository $repository): ?Release
