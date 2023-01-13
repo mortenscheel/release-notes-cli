@@ -15,10 +15,11 @@ use function Termwind\renderUsing;
 
 class ShowReleaseNotesCommand extends Command
 {
-    protected $signature = 'release-notes {name?   : Name of the repository or package}
-                                          {--tag=  : Specific tag}
-                                          {--from= : From version}
-                                          {--to=   : To version}';
+    protected $signature = 'release-notes {name?    : Name of the repository or package}
+                                          {--tag=   : Specific tag}
+                                          {--from=  : From version}
+                                          {--to=    : To version}
+                                          {--since= : From version (but not including)}';
 
     protected $description = 'Shows release notes for a Github repository or Composer package.';
 
@@ -106,7 +107,8 @@ HTML;
         }
         $from = $this->option('from');
         $to = $this->option('to');
-        if (! $from && ! $to) {
+        $since = $this->option('since');
+        if (! $from && ! $to && ! $since) {
             $latest = $github->getLatestRelease($repository);
             if (! $latest) {
                 $this->error("Unable to find a latest release in $repository->fullName");
@@ -117,17 +119,22 @@ HTML;
 
             return self::SUCCESS;
         }
+        $includeFrom = true;
         if ($from) {
             $from = $versionParser->normalize($from);
+        }
+        if ($since) {
+            $from = $versionParser->normalize($since);
+            $includeFrom = false;
         }
         if ($to) {
             $to = $versionParser->normalize($to);
         }
-        $releases = array_filter($github->getAllReleases($repository), function (Release $release) use ($from, $to) {
+        $releases = array_filter($github->getAllReleases($repository), function (Release $release) use ($from, $to, $includeFrom) {
             if (! $release->normalizedVersion || ! $release->notes) {
                 return false;
             }
-            if ($from && version_compare($release->normalizedVersion, $from, '<')) {
+            if ($from && version_compare($release->normalizedVersion, $from, ($includeFrom ? '<' : '<='))) {
                 return false;
             }
             if ($to && version_compare($release->normalizedVersion, $to, '>')) {

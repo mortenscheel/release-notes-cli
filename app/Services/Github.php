@@ -124,7 +124,7 @@ class Github
         }
 
         return collect($data)->map(fn (array $item) => Release::fromApi($item))
-            ->sortBy('normalizedVersion')
+            ->sortBy('normalizedVersion', SORT_NATURAL)
             ->values()
             ->toArray();
     }
