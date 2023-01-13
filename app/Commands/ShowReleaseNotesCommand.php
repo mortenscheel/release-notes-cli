@@ -71,11 +71,7 @@ HTML;
     protected function configure()
     {
         parent::configure();
-        $buffer = new BufferedOutput(decorated: true);
-        renderUsing($buffer);
-        render($this->help);
-        renderUsing($this->output);
-        $this->help = $buffer->fetch();
+        $this->help = $this->renderBuffered($this->help);
     }
 
     public function handle(Github $github, VersionParser $versionParser): int
@@ -144,13 +140,23 @@ HTML;
             return true;
         });
         if (empty($releases)) {
-            $this->warn('No matching release notes found');
+            $this->warn('No release notes found');
 
             return self::SUCCESS;
         }
         $this->renderReleases($releases);
 
         return self::SUCCESS;
+    }
+
+    private function renderBuffered(string $string): string
+    {
+        $buffer = new BufferedOutput(decorated: true);
+        renderUsing($buffer);
+        render($string);
+        renderUsing($this->output);
+
+        return $buffer->fetch();
     }
 
     /**
@@ -171,10 +177,9 @@ HTML;
                   <span>Published {$release->publishedOn->diffForHumans()}</span>
                 </div>
                 HTML;
-
-            render($header);
+            $this->output->write($this->renderBuffered($header));
             $html = $converter->convert($release->notes ?: 'No release notes');
-            render("<div class='mb-1 mx-1'>$html</div>");
+            $this->output->write($this->renderBuffered("<div class='mb-1 mx-1'>$html</div>"));
         }
     }
 }
