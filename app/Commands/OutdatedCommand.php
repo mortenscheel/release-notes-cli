@@ -17,7 +17,7 @@ class OutdatedCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'outdated';
+    protected $signature = 'outdated {package? : Only show release notes for a specific package}';
 
     /**
      * The description of the command.
@@ -50,6 +50,7 @@ class OutdatedCommand extends Command
         $data = json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
         $outdated = collect(Arr::get($data, 'locked', []))
             ->filter(fn (array $package) => ! str_starts_with($package['version'], 'dev-'))
+            ->when($this->argument('package'), fn ($result, $package) => $result->where('name', $package))
             ->mapWithKeys(fn (array $package) => [
                 Arr::get($package, 'name') => [
                     'name' => Arr::get($package, 'name'),
@@ -65,6 +66,11 @@ class OutdatedCommand extends Command
             return self::SUCCESS;
         }
         $this->showTable($outdated);
+        if ($outdated->count() === 1) {
+            $this->showReleaseNotes($outdated->first());
+
+            return self::SUCCESS;
+        }
 
         return $this->promptChoice($outdated);
     }
@@ -85,24 +91,28 @@ class OutdatedCommand extends Command
 
             return $this->promptChoice($outdated);
         }
-        $versions = $outdated->get($choice);
-        render(<<<HTML
-                <div class='w-full py-1 text-center bg-slate-700 text-white'>
-                    <span class='font-bold'>$choice</span> updated from
-                    <span class='text-orange'>{$versions['current']}</span> to
-                    <span class='text-green'>{$versions['latest']}</span>
-                </div>
-                HTML
-        );
-        Artisan::call('release-notes', [
-            'name' => $choice,
-            '--since' => $versions['current'],
-        ], $this->output);
+        $this->showReleaseNotes($outdated->get($choice));
 
         return $this->promptChoice($outdated);
     }
 
-    private function showTable(Collection $outdated)
+    private function showReleaseNotes(array $package): void
+    {
+        render(<<<HTML
+                <div class='w-full py-1 text-center bg-slate-700 text-white'>
+                    <span class='font-bold'>{$package['name']}</span> updated from
+                    <span class='text-orange'>{$package['current']}</span> to
+                    <span class='text-green'>{$package['latest']}</span>
+                </div>
+                HTML
+        );
+        Artisan::call('release-notes', [
+            'name' => $package['name'],
+            '--since' => $package['current'],
+        ], $this->output);
+    }
+
+    private function showTable(Collection $outdated): void
     {
         $tableRows = $outdated->map(function (array $package) {
             $nameColor = $package['abandoned'] ? 'yellow' : 'brightwhite';
