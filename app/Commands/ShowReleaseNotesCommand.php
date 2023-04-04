@@ -68,12 +68,15 @@ class ShowReleaseNotesCommand extends Command
 </div>
 HTML;
 
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->help = $this->renderBuffered($this->help);
     }
 
+    /**
+     * @throws \League\CommonMark\Exception\CommonMarkException
+     */
     public function handle(Github $github, VersionParser $versionParser): int
     {
         if (! $this->argument('name')) {
@@ -83,6 +86,7 @@ HTML;
 
             return self::SUCCESS;
         }
+        /** @var string $name */
         $name = $this->argument('name');
         $repository = Repository::resolve($name);
         if (! $repository) {
@@ -91,6 +95,7 @@ HTML;
             return self::FAILURE;
         }
         if ($tag = $this->option('tag')) {
+            /** @var string $tag */
             $release = $github->getReleaseForTag($repository, $tag);
             if (! $release) {
                 $this->error("Unable to find a release from tag $tag in $repository->fullName");
@@ -101,8 +106,11 @@ HTML;
 
             return self::SUCCESS;
         }
+        /** @var string|null $from */
         $from = $this->option('from');
+        /** @var string|null $to */
         $to = $this->option('to');
+        /** @var string|null $since */
         $since = $this->option('since');
         if (! $from && ! $to && ! $since) {
             $latest = $github->getLatestRelease($repository);
@@ -161,7 +169,8 @@ HTML;
 
     /**
      * @param  Release[]  $releases
-     * @return void
+     *
+     * @throws \League\CommonMark\Exception\CommonMarkException
      */
     private function renderReleases(array $releases): void
     {

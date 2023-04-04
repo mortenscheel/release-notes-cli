@@ -15,7 +15,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->app->singleton(Github::class, function () {
-            return new Github(config('github.token'));
+            /** @var string $token */
+            $token = config('github.token');
+
+            return new Github($token);
         });
     }
 

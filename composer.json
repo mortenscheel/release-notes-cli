@@ -37,6 +37,7 @@
         "fakerphp/faker": "^1.21.0",
         "laravel/pint": "^1.8",
         "mockery/mockery": "^1.5.1",
+        "nunomaduro/larastan": "^2.5",
         "pestphp/pest": "^2.4"
     },
     "minimum-stability": "stable",

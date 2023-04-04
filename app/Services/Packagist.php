@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Repository;
-use Cache;
+use Illuminate\Support\Facades\Cache;
 use Packagist\Api\Client;
 
 class Packagist
@@ -14,18 +14,22 @@ class Packagist
 
     public function findGithubUrl(Repository $repository): ?string
     {
-        $repository = Cache::remember(
+        /** @var string|null $url */
+        $url = Cache::remember(
             "packagist-$repository->fullName",
             now()->addMonth(),
             function () use ($repository) {
                 try {
-                    return $this->client->get($repository->fullName)->getRepository();
+                    /** @var \Packagist\Api\Result\Package $package */
+                    $package = $this->client->get($repository->fullName);
+
+                    return $package->getRepository();
                 } catch (\Throwable) {
                     return false;
                 }
             }
         );
 
-        return $repository ?: null;
+        return $url ?: null;
     }
 }

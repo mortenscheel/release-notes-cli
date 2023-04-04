@@ -34,7 +34,12 @@ class Repository
 
     private static function parseRepository(string $name): Repository
     {
-        $path = trim(parse_url($name)['path'], '/');
+        if ($urlPath = parse_url($name, PHP_URL_PATH)) {
+            $path = $urlPath;
+        } else {
+            $path = $name;
+        }
+        $path = trim($path, '/');
         [$username, $repository] = explode('/', $path);
 
         return new Repository($username, $repository);

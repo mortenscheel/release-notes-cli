@@ -4,7 +4,6 @@ namespace App;
 
 use Carbon\Carbon;
 use Composer\Semver\VersionParser;
-use Illuminate\Support\Arr;
 
 class Release
 {
@@ -23,13 +22,17 @@ class Release
         }
     }
 
-    public static function fromApi(mixed $data): self
+    /**
+     * @param  array{tag_name: string, html_url: string, published_at: string, body: string}  $data
+     * @return \App\Release
+     */
+    public static function fromApi(mixed $data): Release
     {
         return new self(
-            Arr::get($data, 'tag_name'),
-            Arr::get($data, 'html_url'),
-            Carbon::parse(Arr::get($data, 'published_at')),
-            Arr::get($data, 'body')
+            $data['tag_name'],
+            $data['html_url'],
+            Carbon::parse($data['published_at']),
+            $data['body']
         );
     }
 }

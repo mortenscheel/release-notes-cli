@@ -23,6 +23,7 @@ class ColorTestCommand extends Command
      */
     protected $description = 'Show all Termwind colors';
 
+    /** @var array|string[] */
     private array $terminalColors = [
         'black',
         'white',
@@ -43,6 +44,7 @@ class ColorTestCommand extends Command
         'brightmagenta',
     ];
 
+    /** @var array|string[] */
     private array $termwindColors = [
         'slate',
         'gray',
@@ -68,6 +70,7 @@ class ColorTestCommand extends Command
         'rose',
     ];
 
+    /** @var array|int[] */
     private array $weights = [
         50,
         100,
@@ -84,7 +87,7 @@ class ColorTestCommand extends Command
     /**
      * Execute the console command.
      *
-     * @return mixed
+     * @return int
      */
     public function handle()
     {
@@ -105,6 +108,9 @@ class ColorTestCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * @return \Illuminate\Support\Collection<int, string>
+     */
     private function getAllColors(): Collection
     {
         return collect($this->termwindColors)

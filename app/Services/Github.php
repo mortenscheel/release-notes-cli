@@ -18,6 +18,7 @@ class Github
 
     private const MONTH = self::DAY * 30;
 
+    /** @var array|int[] */
     private static array $lifetime = [
         'repo-lookup' => self::MONTH,
         'latest-release' => self::MINUTE * 5,
@@ -57,6 +58,7 @@ class Github
 
     public function getLatestRelease(Repository $repository): ?Release
     {
+        /** @var array{tag_name: string, html_url: string, published_at: string, body: string}|null $data */
         $data = Cache::remember(
             "latest-release-$repository->fullName",
             self::$lifetime['latest-release'],
@@ -77,6 +79,7 @@ class Github
 
     public function getReleaseForTag(Repository $repository, string $tag): ?Release
     {
+        /** @var array{tag_name: string, html_url: string, published_at: string, body: string}|null $data */
         $data = Cache::remember(
             "tag-release-$repository->fullName-$tag",
             self::$lifetime['tag-release'],
@@ -100,7 +103,6 @@ class Github
     }
 
     /**
-     * @param  \App\Repository  $repository
      * @return Release[]
      */
     public function getAllReleases(Repository $repository): array
@@ -122,10 +124,15 @@ class Github
         if (! $data) {
             return [];
         }
-
-        return collect($data)->map(fn (array $item) => Release::fromApi($item))
+        /** @var Release[] $releases */
+        $releases = collect($data)->map(function (array $item) {
+            /** @var array{tag_name: string, html_url: string, published_at: string, body: string} $item */
+            return Release::fromApi($item);
+        })
             ->sortBy('normalizedVersion', SORT_NATURAL)
             ->values()
             ->toArray();
+
+        return $releases;
     }
 }

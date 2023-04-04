@@ -2,6 +2,7 @@
 
 namespace App\Commands;
 
+use App\OutdatedPackage;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
@@ -29,7 +30,7 @@ class OutdatedCommand extends Command
     /**
      * Execute the console command.
      *
-     * @return mixed
+     * @return int
      *
      * @throws \JsonException
      */
@@ -47,18 +48,19 @@ class OutdatedCommand extends Command
 
             return self::FAILURE;
         }
+        /** @var array{locked: array<int, array{name: string, version: string, latest: string, latest-status: string, abandoned: bool}>} $data */
         $data = json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
-        $outdated = collect(Arr::get($data, 'locked', []))
+        $outdated = collect($data['locked'])
             ->filter(fn (array $package) => ! str_starts_with($package['version'], 'dev-'))
             ->when($this->argument('package'), fn ($result, $package) => $result->where('name', $package))
             ->mapWithKeys(fn (array $package) => [
-                Arr::get($package, 'name') => [
-                    'name' => Arr::get($package, 'name'),
-                    'current' => Str::after(Arr::get($package, 'version'), 'v'),
-                    'latest' => Str::after(Arr::get($package, 'latest'), 'v'),
-                    'safe' => Arr::get($package, 'latest-status') === 'semver-safe-update',
-                    'abandoned' => Arr::get($package, 'abandoned'),
-                ],
+                Arr::get($package, 'name') => new OutdatedPackage(
+                    name: $package['name'],
+                    current: Str::after($package['version'], 'v'),
+                    latest: Str::after($package['latest'], 'v'),
+                    safe: $package['latest-status'] === 'semver-safe-update',
+                    abandoned: $package['abandoned'],
+                ),
             ]);
         if ($outdated->isEmpty()) {
             $this->info('No outdated packages found');
@@ -75,9 +77,13 @@ class OutdatedCommand extends Command
         return $this->promptChoice($outdated);
     }
 
+    /**
+     * @param  \Illuminate\Support\Collection<string, OutdatedPackage>  $outdated
+     */
     private function promptChoice(Collection $outdated): int
     {
-        $choice = $this->anticipate('Select package (or quit/table)', $outdated->keys()->push('table', 'quit'));
+        /** @var string $choice */
+        $choice = $this->anticipate('Select package (or quit/table)', $outdated->keys()->push('table', 'quit')->toArray());
         if ($choice === 'quit') {
             return self::SUCCESS;
         }
@@ -86,43 +92,47 @@ class OutdatedCommand extends Command
 
             return $this->promptChoice($outdated);
         }
-        if (! $outdated->has($choice)) {
+        if ($package = $outdated->get($choice)) {
+            $this->showReleaseNotes($package);
+        } else {
             $this->warn("No outdated package with name: $choice");
 
             return $this->promptChoice($outdated);
         }
-        $this->showReleaseNotes($outdated->get($choice));
 
         return $this->promptChoice($outdated);
     }
 
-    private function showReleaseNotes(array $package): void
+    private function showReleaseNotes(OutdatedPackage $package): void
     {
         render(<<<HTML
                 <div class='w-full py-1 text-center bg-slate-700 text-white'>
-                    <span class='font-bold'>{$package['name']}</span> updated from
-                    <span class='text-orange'>{$package['current']}</span> to
-                    <span class='text-green'>{$package['latest']}</span>
+                    <span class='font-bold'>$package->name</span> updated from
+                    <span class='text-orange'>$package->current</span> to
+                    <span class='text-green'>$package->latest</span>
                 </div>
                 HTML
         );
         Artisan::call('release-notes', [
-            'name' => $package['name'],
-            '--since' => $package['current'],
+            'name' => $package->name,
+            '--since' => $package->current,
         ], $this->output);
     }
 
+    /**
+     * @param  \Illuminate\Support\Collection<string, OutdatedPackage>  $outdated
+     */
     private function showTable(Collection $outdated): void
     {
-        $tableRows = $outdated->map(function (array $package) {
-            $nameColor = $package['abandoned'] ? 'yellow' : 'brightwhite';
-            $latestColor = $package['safe'] ? 'green' : 'yellow';
+        $tableRows = $outdated->map(function (OutdatedPackage $package) {
+            $nameColor = $package->abandoned ? 'yellow' : 'brightwhite';
+            $latestColor = $package->safe ? 'green' : 'yellow';
 
             return <<<HTML
             <tr>
-                <td><span class="text-$nameColor">{$package['name']}</span></td>
-                <td><span class='text-red'>{$package['current']}</span></td>
-                <td><span class='text-$latestColor'>{$package['latest']}</span></td>
+                <td><span class="text-$nameColor">$package->name</span></td>
+                <td><span class='text-red'>$package->current</span></td>
+                <td><span class='text-$latestColor'>$package->latest</span></td>
             </tr>
             HTML;
         }
