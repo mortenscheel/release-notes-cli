@@ -4,10 +4,13 @@ namespace App\Services;
 
 use App\Release;
 use App\Repository;
-use Github\AuthMethod;
-use Github\Client;
-use Github\ResultPager;
+use App\Services\Github\GithubConnector;
+use App\Services\Github\IndexReleasesRequest;
+use App\Services\Github\ShowLatestReleaseRequest;
+use App\Services\Github\ShowReleaseForTagRequest;
+use App\Services\Github\ShowRepoRequest;
 use Illuminate\Support\Facades\Cache;
+use Saloon\Http\Response;
 use Throwable;
 
 class Github
@@ -26,19 +29,6 @@ class Github
         'all-releases' => self::MINUTE * 30,
     ];
 
-    private Client $client;
-
-    public function __construct(?string $token)
-    {
-        $this->client = new Client();
-        if ($token) {
-            $this->client->authenticate(
-                tokenOrLogin: $token,
-                authMethod: AuthMethod::ACCESS_TOKEN
-            );
-        }
-    }
-
     public function repositoryExists(Repository $repository): bool
     {
         return Cache::remember(
@@ -46,7 +36,7 @@ class Github
             self::$lifetime['repo-lookup'],
             function () use ($repository) {
                 try {
-                    $this->client->repositories()->show($repository->username, $repository->repository);
+                    (new ShowRepoRequest($repository->username, $repository->repository))->send();
 
                     return true;
                 } catch (Throwable) {
@@ -64,7 +54,7 @@ class Github
             self::$lifetime['latest-release'],
             function () use ($repository) {
                 try {
-                    return $this->client->repositories()->releases()->latest($repository->username, $repository->repository);
+                    return (new ShowLatestReleaseRequest($repository->username, $repository->repository))->send()->json();
                 } catch (Throwable) {
                     return null;
                 }
@@ -85,11 +75,7 @@ class Github
             self::$lifetime['tag-release'],
             function () use ($repository, $tag) {
                 try {
-                    return $this->client->repositories()->releases()->tag(
-                        $repository->username,
-                        $repository->repository,
-                        $tag
-                    );
+                    return (new ShowReleaseForTagRequest($repository->username, $repository->repository, $tag))->send()->json();
                 } catch (Throwable) {
                     return null;
                 }
@@ -107,15 +93,18 @@ class Github
      */
     public function getAllReleases(Repository $repository): array
     {
+        /** @var array<int, array{tag_name: string, html_url: string, published_at: string, body: string}> $data */
         $data = Cache::remember(
             "all-releases-$repository->fullName",
             self::$lifetime['all-releases'],
             function () use ($repository) {
                 try {
-                    return (new ResultPager($this->client))->fetchAll($this->client->repository()->releases(), 'all', [
-                        $repository->username,
-                        $repository->repository,
-                    ]);
+                    $connector = new GithubConnector();
+                    $paginator = $connector->paginate(new IndexReleasesRequest($repository->username, $repository->repository));
+                    /** @var \Illuminate\Support\LazyCollection<int, Response> $responses */
+                    $responses = $paginator->collect();
+
+                    return $responses->map(fn (Response $response) => $response->json())->flatten(1)->toArray();
                 } catch (Throwable) {
                     return null;
                 }

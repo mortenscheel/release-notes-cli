@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Services\Github;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -14,12 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->app->singleton(Github::class, function () {
-            /** @var string $token */
-            $token = config('github.token');
-
-            return new Github($token);
-        });
+        //
     }
 
     /**

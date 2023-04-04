@@ -68,5 +68,6 @@ return [
 
     'providers' => [
         App\Providers\AppServiceProvider::class,
+        \Saloon\Laravel\SaloonServiceProvider::class,
     ],
 ];
