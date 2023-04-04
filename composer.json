@@ -1,36 +1,46 @@
 {
     "name": "mortenscheel/release-notes-cli",
     "description": "Show formatted Github release notes in the terminal.",
-    "keywords": ["release notes", "packagist", "laravel zero", "console", "cli"],
-    "homepage": "https://github.com/mortenscheel/release-notes-cli",
-    "type": "project",
     "license": "MIT",
-    "support": {
-        "issues": "https://github.com/mortenscheel/release-notes-cli/issues",
-        "source": "https://github.com/mortenscheel/release-notes-cli"
-    },
+    "type": "project",
+    "keywords": [
+        "release notes",
+        "packagist",
+        "laravel zero",
+        "console",
+        "cli"
+    ],
     "authors": [
         {
             "name": "Morten Scheel",
             "email": "morten@mortenscheel.com"
         }
     ],
-    "require-dev": {
+    "homepage": "https://github.com/mortenscheel/release-notes-cli",
+    "support": {
+        "issues": "https://github.com/mortenscheel/release-notes-cli/issues",
+        "source": "https://github.com/mortenscheel/release-notes-cli"
+    },
+    "require": {
         "php": "^8.1",
-        "fakerphp/faker": "^1.9.1",
         "guzzlehttp/guzzle": "^7.5",
         "http-interop/http-factory-guzzle": "^1.2",
-        "illuminate/database": "^9.0",
-        "knplabs/github-api": "^3.9",
-        "knplabs/packagist-api": "^2.0",
-        "laravel-zero/framework": "^9.2",
-        "laravel/pint": "^1.2",
-        "league/commonmark": "^2.3",
-        "mockery/mockery": "^1.4.4",
-        "nunomaduro/termwind": "^1.14",
-        "pestphp/pest": "^1.21.3",
-        "roave/security-advisories": "dev-latest"
+        "illuminate/database": "^10.6",
+        "knplabs/github-api": "^3.11",
+        "knplabs/packagist-api": "^2.0.2",
+        "laravel-zero/framework": "^10.0.2",
+        "league/commonmark": "^2.4",
+        "nunomaduro/termwind": "^1.15.1"
     },
+    "require-dev": {
+        "ergebnis/composer-normalize": "^2.30",
+        "fakerphp/faker": "^1.21.0",
+        "laravel/pint": "^1.8",
+        "mockery/mockery": "^1.5.1",
+        "pestphp/pest": "^2.4"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "App\\": "app/"
@@ -42,20 +52,13 @@
         }
     },
     "config": {
-        "preferred-install": "dist",
-        "sort-packages": true,
-        "optimize-autoloader": true,
         "allow-plugins": {
-            "pestphp/pest-plugin": true
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true,
+            "ergebnis/composer-normalize": true
         },
-        "platform": {
-            "php": "8.1.13"
-        }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
-    "bin": ["builds/release-notes"],
-    "require": {
-        "laravel-zero/phar-updater": "^1.2"
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
     }
 }
