@@ -4,7 +4,7 @@ namespace App\Commands;
 
 use App\Release;
 use App\Repository;
-use App\Services\Github;
+use App\Services\Github\Github;
 use Composer\Semver\VersionParser;
 use Illuminate\Support\Facades\Artisan;
 use LaravelZero\Framework\Commands\Command;

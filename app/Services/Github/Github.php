@@ -1,14 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Github;
 
 use App\Release;
 use App\Repository;
-use App\Services\Github\GithubConnector;
-use App\Services\Github\IndexReleasesRequest;
-use App\Services\Github\ShowLatestReleaseRequest;
-use App\Services\Github\ShowReleaseForTagRequest;
-use App\Services\Github\ShowRepoRequest;
 use Illuminate\Support\Facades\Cache;
 use Saloon\Http\Response;
 use Throwable;

@@ -1,17 +1,13 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Packagist;
 
 use App\Repository;
 use Illuminate\Support\Facades\Cache;
-use Packagist\Api\Client;
+use Throwable;
 
 class Packagist
 {
-    public function __construct(private Client $client)
-    {
-    }
-
     public function findGithubUrl(Repository $repository): ?string
     {
         /** @var string|null $url */
@@ -20,11 +16,8 @@ class Packagist
             now()->addMonth(),
             function () use ($repository) {
                 try {
-                    /** @var \Packagist\Api\Result\Package $package */
-                    $package = $this->client->get($repository->fullName);
-
-                    return $package->getRepository();
-                } catch (\Throwable) {
+                    return (new ShowPackageRequest($repository->fullName))->send()->json('package.repository');
+                } catch (Throwable) {
                     return false;
                 }
             }

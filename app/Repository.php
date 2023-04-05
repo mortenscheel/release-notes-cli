@@ -2,8 +2,8 @@
 
 namespace App;
 
-use App\Services\Github;
-use App\Services\Packagist;
+use App\Services\Github\Github;
+use App\Services\Packagist\Packagist;
 
 class Repository
 {
