@@ -9,17 +9,20 @@ class Release
 {
     public ?string $normalizedVersion;
 
+    public string $notes;
+
     public function __construct(
         public string $tag,
         public string $url,
         public Carbon $publishedOn,
-        public ?string $notes
+        ?string $notes
     ) {
         try {
             $this->normalizedVersion = (new VersionParser)->normalize($this->tag);
         } catch (\Throwable) {
             $this->normalizedVersion = null;
         }
+        $this->notes = $notes ?: 'No release notes';
     }
 
     /**

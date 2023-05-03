@@ -15,11 +15,12 @@ use function Termwind\renderUsing;
 
 class ShowReleaseNotesCommand extends Command
 {
-    protected $signature = 'release-notes {name?    : Name of the repository or package}
-                                          {--tag=   : Specific tag}
-                                          {--from=  : From version}
-                                          {--to=    : To version}
-                                          {--since= : From version (but not including)}';
+    protected $signature = 'release-notes {name?      : Name of the repository or package}
+                                          {--tag=     : Specific tag}
+                                          {--from=    : From version}
+                                          {--to=      : To version}
+                                          {--since=   : From version (but not including)}
+                                          {--markdown : Output markdown}';
 
     protected $description = 'Shows release notes for a Github repository or Composer package.';
 
@@ -179,16 +180,24 @@ HTML;
             'allow_unsafe_links' => false,
         ]);
         foreach ($releases as $release) {
-            $header = <<<HTML
+            if ($this->option('markdown')) {
+                $this->output->writeln(<<<EOF
+> Release: $release->tag, published {$release->publishedOn->toDateString()}
+$release->notes
+
+EOF);
+            } else {
+                $header = <<<HTML
                 <div class='w-full flex justify-between bg-white text-black px-1'>
                   <span>$release->tag</span>
                   <a href="$release->url">Show on Github</a>
                   <span>Published {$release->publishedOn->diffForHumans()}</span>
                 </div>
                 HTML;
-            $this->output->write($this->renderBuffered($header));
-            $html = $converter->convert($release->notes ?: 'No release notes');
-            $this->output->write($this->renderBuffered("<div class='mb-1 mx-1'>$html</div>"));
+                $this->output->write($this->renderBuffered($header));
+                $html = $converter->convert($release->notes ?: 'No release notes');
+                $this->output->write($this->renderBuffered("<div class='mb-1 mx-1'>$html</div>"));
+            }
         }
     }
 }

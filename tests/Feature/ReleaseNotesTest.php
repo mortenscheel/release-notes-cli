@@ -17,7 +17,7 @@ use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 
 beforeEach(function () {
-   //MockConfig::throwOnMissingFixtures();
+    //MockConfig::throwOnMissingFixtures();
 });
 
 it('shows extended help section when run without repo name', function () {
