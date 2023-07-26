@@ -6,7 +6,9 @@ use App\Release;
 use App\Repository;
 use App\Services\Github\Github;
 use Composer\Semver\VersionParser;
+use Exception;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use LaravelZero\Framework\Commands\Command;
 use League\CommonMark\CommonMarkConverter;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -126,13 +128,44 @@ HTML;
         }
         $includeFrom = true;
         if ($from) {
+            if ($from === 'current') {
+                try {
+                    $from = $this->getInstalledVersion($this->argument('name'));
+                    $this->comment("From version: $from");
+                } catch (Exception) {
+                    $this->error('Unable to find installed package');
+
+                    return self::FAILURE;
+                }
+            }
             $from = $versionParser->normalize($from);
         }
         if ($since) {
+            if ($since === 'current') {
+                try {
+                    $since = $this->getInstalledVersion($this->argument('name'));
+                    $this->comment("Since version: $since");
+                } catch (Exception) {
+                    $this->error('Unable to find installed package');
+
+                    return self::FAILURE;
+                }
+
+            }
             $from = $versionParser->normalize($since);
             $includeFrom = false;
         }
         if ($to) {
+            if ($to === 'current') {
+                try {
+                    $to = $this->getInstalledVersion($this->argument('name'));
+                    $this->comment("To version: $to");
+                } catch (Exception) {
+                    $this->error('Unable to find installed package');
+
+                    return self::FAILURE;
+                }
+            }
             $to = $versionParser->normalize($to);
         }
         $releases = array_filter($github->getAllReleases($repository), function (Release $release) use ($from, $to, $includeFrom) {
@@ -199,5 +232,15 @@ EOF);
                 $this->output->write($this->renderBuffered("<div class='mb-1 mx-1'>$html</div>"));
             }
         }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    private function getInstalledVersion(string $package): string
+    {
+        $data = File::json(getcwd().'/vendor/composer/installed.json');
+
+        return collect($data['packages'])->firstOrFail('name', $package)['version'];
     }
 }
